@@ -1,10 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { ProductService } from '../services/product.service';
 import { Product } from '../common/product';
+import { CartService } from '../services/cart.service'; // Import the CartService
+import { CartItem } from '../common/cart-item.model'; // Import CartItem model
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-
 
 @Component({
   selector: 'app-product-list',
@@ -17,16 +18,19 @@ export class ProductListComponent implements OnInit {
 
   products: Product[] = [];
   currentCategoryId: number = 1;
-  searchMode: boolean = false;  // Declare the searchMode property
+  searchMode: boolean = false;
 
-  constructor(private productService: ProductService,
-              private route: ActivatedRoute) { }
+  constructor(
+    private productService: ProductService,
+    private cartService: CartService, // Inject CartService
+    private route: ActivatedRoute
+  ) {}
 
-              ngOnInit(): void {
-                this.route.paramMap.subscribe(() => {
-                  this.listProducts();
-                });
-              }
+  ngOnInit(): void {
+    this.route.paramMap.subscribe(() => {
+      this.listProducts();
+    });
+  }
 
   listProducts() {
     this.searchMode = this.route.snapshot.paramMap.has('keyword');
@@ -36,21 +40,22 @@ export class ProductListComponent implements OnInit {
       this.handleListProducts();
     }
   }
-  
+
   handleSearchProducts() {
     const theKeyword: string = this.route.snapshot.paramMap.get('keyword')!;
-    console.log("Search keyword: " + theKeyword);  // Debugging line
+    console.log("Search keyword: " + theKeyword); // Debugging line
     this.productService.searchProduct(theKeyword).subscribe(data => {
       this.products = data;
     });
   }
+
   handleListProducts() {
     const hasCategoryId: boolean = this.route.snapshot.paramMap.has('id');
     if (hasCategoryId) {
       // Get the category id and convert it into a number
       this.currentCategoryId = +this.route.snapshot.paramMap.get('id')!;
     } else {
-      this.currentCategoryId = 1;
+      this.currentCategoryId = 1; // Default category ID
     }
 
     // Fetch products by category
@@ -59,4 +64,16 @@ export class ProductListComponent implements OnInit {
     });
   }
 
+  addToCart(product: Product): void {
+    const cartItem: CartItem = {
+      id: product.id, // or any unique identifier from your Product
+      name: product.name,
+      imageUrl: product.imageUrl,
+      unitPrice: product.unitPrice,
+      quantity: 1 // Default quantity
+    };
+    
+    this.cartService.addToCart(cartItem); // Call the addToCart method in CartService
+    console.log(`Added to cart: ${product.name}`);
+  }
 }
